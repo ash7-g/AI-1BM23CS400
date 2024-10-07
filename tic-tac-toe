@@ -1,55 +1,81 @@
+import numpy as np
 import random
 
-class Room:
-    def __init__(self):
-        self.state = 'dirty' if random.random() < 0.5 else 'clean'
+board = np.array([[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]])
 
-    def clean(self):
-        self.state = 'clean'
 
-class VacuumCleaner:
-    def __init__(self, grid_size):
-        self.grid_size = grid_size
-        self.environment = [[Room() for _ in range(grid_size)] for _ in range(grid_size)]
-        self.x, self.y = 0, 0  # Start position
+def check_win(b):
+    for i in range(3):
+        if (b[i, :] == 1).all() or (b[:, i] == 1).all():
+            return 1
+        if (b[i, :] == 0).all() or (b[:, i] == 0).all():
+            return 0
+    if (b[0, 0] == b[1, 1] == b[2, 2] == 1) or (b[0, 2] == b[1, 1] == b[2, 0] == 1):
+        return 1
+    if (b[0, 0] == b[1, 1] == b[2, 2] == 0) or (b[0, 2] == b[1, 1] == b[2, 0] == 0):
+        return 0
+    return -1
 
-    def display_environment(self):
-        print("Current Environment:")
-        for row in self.environment:
-            print(" | ".join(room.state[0] for room in row))
-        print()
+def is_full(b):
+    return not (-1 in b)
 
-    def move(self, direction):
-        if direction == 'up' and self.x > 0:
-            self.x -= 1
-        elif direction == 'down' and self.x < self.grid_size - 1:
-            self.x += 1
-        elif direction == 'left' and self.y > 0:
-            self.y -= 1
-        elif direction == 'right' and self.y < self.grid_size - 1:
-            self.y += 1
+def print_board(b):
+    symbols = {1: 'X', 0: 'O', -1: ' '}
+    for row in b:
+        print(" | ".join(symbols[cell] for cell in row))
+        print("---------")
 
-    def clean_current_room(self):
-        if self.environment[self.x][self.y].state == 'dirty':
-            self.environment[self.x][self.y].clean()
-            print(f"Cleaned room at ({self.x}, {self.y})")
+def player_move():
+    while True:
+        row = int(input("Enter row (0, 1, or 2): "))
+        col = int(input("Enter column (0, 1, or 2): "))
+        if((row<=2 and row >=0)and(col<=2 and col >=0)):
+          if board[row, col] == -1:
+              board[row, col] = 1 
+              break
+          else:
+              print("Cell is already occupied! Try again.")
+        else:
+          print("Invalid input,please try again")
 
-    def is_all_clean(self):
-        return all(room.state == 'clean' for row in self.environment for room in row)
 
-    def run(self):
-        while not self.is_all_clean():
-            self.clean_current_room()
-            self.display_environment()
+def machine_move():
+    empty_cells = [(r, c) for r in range(3) for c in range(3) if board[r, c] == -1]
+    if empty_cells:
+        row, col = random.choice(empty_cells)
+        board[row, col] = 0 # Machine uses 0 for 'O'
+        print(f"Machine placed O at ({row}, {col})")
 
-            # Random move (up, down, left, right)
-            direction = random.choice(['up', 'down', 'left', 'right'])
-            self.move(direction)
-            print(f"Moved {direction} to ({self.x}, {self.y})")
+def play_game():
+    print("Welcome to Tic Tac Toe!")
+    print_board(board)
+    
+    while True:
+        print("Player 1's turn (X)")
+        player_move()
+        print_board(board)
+        
+        winner = check_win(board)
+        if winner != -1:
+            print(f"Player {winner} wins!")
+            break
+        
+        if is_full(board):
+            print("It's a draw!")
+            break
 
-        print("All rooms are clean! Terminating.")
+        print("Machine's turn (O)")
+        machine_move()
+        print_board(board)
 
-if __name__ == "__main__":
-    grid_size = int(input("Enter the size of the grid (number of rooms per side): "))
-    vacuum_cleaner = VacuumCleaner(grid_size)
-    vacuum_cleaner.run()
+        winner = check_win(board)
+        if winner != -1:
+            print(f"Player {winner} wins!")
+            break
+        
+        if is_full(board):
+            print("It's a draw!")
+            break
+
+play_game()
+
